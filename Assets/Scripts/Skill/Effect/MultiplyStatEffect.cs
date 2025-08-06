@@ -8,6 +8,7 @@ public class MultiplyStatEffect : Effect
     private List<float> _multiplyValues;  // 각 스탯에 대해 적용할 배수 리스트
     private float _duration;
 
+    private bool isActive = false;
     // 상태 변경을 적용하는 메서드
 
     public MultiplyStatEffect(Stat originalStat, List<float> multiplyValues, float duration)
@@ -26,12 +27,17 @@ public class MultiplyStatEffect : Effect
 
     public override bool Apply(Actor source, Actor target)
     {
-        // 타겟 스탯에 영향을 미치는 효과 적용
-        source.stat.ApplyStatModification(_multiplyValues);
-
+        if (!isActive)
+        {
+            // 타겟 스탯에 영향을 미치는 효과 적용
+            source.stat.ApplyStatModification(_multiplyValues);
+            isActive = true;
+        }
+        
         if (_duration <= 0)
         {
             source.stat = _originalStat;
+            Clear();
             return true;
         }
 
@@ -40,7 +46,7 @@ public class MultiplyStatEffect : Effect
 
     public override void Clear()
     {
-        throw new System.NotImplementedException();
+        isActive = false;
     }
 
 }
