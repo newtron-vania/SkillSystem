@@ -1,0 +1,44 @@
+{
+  "skills": [
+    {
+      "skillIndex": 101,
+      "skillName": "Rocket Grab",
+      "skillType": "NoneTarget",
+      "cost": 30,
+      "cooltime": 10,
+      "values": [
+        110,
+        1.2,
+        10,
+        10,
+        0.5
+      ]
+    },
+    {
+      "skillIndex": 102,
+      "skillName": "OverDrive",
+      "skillType": "Instant",
+      "cost": 80,
+      "cooltime": 10,
+      "values": [
+        2,
+        2.5,
+        0.5,
+        2.5
+      ]
+    },
+    {
+      "skillIndex": 103,
+      "skillName": "Power Fist",
+      "skillType": "Target",
+      "cost": 50,
+      "cooltime": 4,
+      "values": [
+        2.0,
+        0.25,
+        2,
+        1
+      ]
+    }
+  ]
+}
