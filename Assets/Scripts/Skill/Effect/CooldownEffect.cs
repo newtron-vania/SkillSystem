@@ -1,3 +1,8 @@
+
+/// <summary>
+/// CooldownEffect는 지정된 스킬 인덱스에 대해 쿨타임을 설정하는 효과를 담당하는 클래스입니다.
+/// 스킬 사용 후 해당 스킬의 쿨다운을 source Actor의 skillCooldowns에 적용합니다.
+/// </summary>
 public class CooldownEffect : Effect
 {
     private float _maxCooltime = 0f;

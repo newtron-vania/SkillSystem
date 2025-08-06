@@ -1,12 +1,17 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// ShootProjectileEffect는 지정된 투사체를 생성하여 목표 방향으로 발사하는 효과 클래스입니다.
+/// 투사체의 속도, 최대 거리, 프리팹 경로, 충돌 시 실행할 액션을 설정할 수 있습니다.
+/// 생성된 투사체는 Projectile 컴포넌트를 통해 이동 및 충돌 처리를 수행합니다.
+/// </summary>
 public class ShootProjectileEffect : Effect
 {
-    private float _speed;  // 투사체 속도
-    private string _projectilePath;  // 투사체 프리팹
-    private float _maxDistance;
-    Action<Actor, Actor> _projectileAction;
+    private float _speed;                     // 투사체 속도
+    private string _projectilePath;           // 투사체 프리팹 리소스 경로
+    private float _maxDistance;               // 투사체 최대 이동 거리
+    Action<Actor, Actor> _projectileAction;   // 충돌 시 실행할 액션 (시전자, 피격자)
 
     public ShootProjectileEffect(float speed, string projectilePath, float maxDistance,
         Action<Actor, Actor> projectileAction) : base()

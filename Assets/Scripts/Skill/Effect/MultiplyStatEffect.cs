@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// MultiplyStatEffect는 일정 시간 동안 지정된 스탯 항목들을 배수로 증폭시키는 효과 클래스입니다.
+/// 효과가 활성화되면 스탯을 수정하며, 시간이 종료되면 원래의 스탯으로 되돌립니다.
+/// </summary>
 public class MultiplyStatEffect : Effect
 {
     private Stat _originalStat;// 상태 효과가 끝난 후 되돌릴 수 있도록

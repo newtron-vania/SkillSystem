@@ -1,6 +1,10 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// AirborneEffect는 대상 Actor에게 일정 시간 동안 에어본 상태(공중에 띄움)를 부여하는 효과 클래스입니다.
+/// 효과 적용 시 Rigidbody에 위 방향으로 힘을 주고, Actor의 이동을 제한하는 상태를 활성화합니다.
+/// </summary>
 public class AirborneEffect : Effect
 {
     private float _duration; // 효과 지속 시간

@@ -4,12 +4,6 @@ public class PlayerMovement : Movement
 {
     public Vector3 targetPosition;  // 목표 위치 (타겟 위치)
 
-    private void Update()
-    {
-        // 타겟 위치로 이동 (X, Y 축만 고려)
-        Move();
-    }
-
     protected override void Move()
     {
         // 목표 위치의 X, Y 값을 목표로 이동

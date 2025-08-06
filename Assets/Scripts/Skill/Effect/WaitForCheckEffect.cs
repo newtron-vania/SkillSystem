@@ -2,6 +2,11 @@ using System;
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// WaitForCheckEffect는 특정 조건(ToBoolCheck)이 충족될 때까지 기다리는 효과 클래스입니다.
+/// 주로 연출이나 순차적 실행 제어를 위한 대기 상태 처리에 사용되며,
+/// 조건이 만족되면 true를 반환하여 다음 로직으로 넘어갈 수 있게 합니다.
+/// </summary>
 public class WaitForCheckEffect : Effect
 {
     private ToBoolCheck _checker; // 대기 시간
