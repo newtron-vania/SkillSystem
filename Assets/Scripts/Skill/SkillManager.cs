@@ -10,9 +10,9 @@ public class SkillManager : MonoBehaviour
 
     private void Update()
     {
-        foreach (var instance in activeSkills)
+        for (int i = 0; i < activeSkills.Count; i++)
         {
-            instance.Tick();
+            activeSkills[i].Tick();
         }
 
         for (int i = activeSkills.Count - 1; i >= 0; i--)

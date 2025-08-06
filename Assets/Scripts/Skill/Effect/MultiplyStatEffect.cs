@@ -10,6 +10,13 @@ public class MultiplyStatEffect : Effect
 
     // 상태 변경을 적용하는 메서드
 
+    public MultiplyStatEffect(Stat originalStat, List<float> multiplyValues, float duration)
+    {
+        _originalStat = originalStat;
+        _multiplyValues = multiplyValues;
+        _duration = duration;
+    }
+
     public override void Initialize(params object[] objects)
     {
         if(objects[0] is Stat stat) _originalStat = stat.DeepCopy();

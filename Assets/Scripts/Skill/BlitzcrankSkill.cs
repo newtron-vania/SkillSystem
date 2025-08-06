@@ -72,13 +72,38 @@ public class RocketGrabSkill : NoneTargetSkill
 
 public class OverDriveSkill : InstantSkill
 {
+    private bool isStart = false;
     public OverDriveSkill(SkillData skillData) : base(skillData)
     {
+        
+        
         AddEffect(new WaitForTimeEffect(0.15f));
         AddEffect(new ConsumeManaEffect(Cost));
         AddEffect(new CooldownEffect(Cooltime, SkillIndex));
-        AddEffect(new MultiplyStatEffect());
-        AddEffect(new MultiplyStatEffect());
+        
+        List<float> multiplyValues = new List<float>()
+        {
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            Values[0]
+        };
+        
+        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, multiplyValues, Values[1]));
+        
+        multiplyValues = new List<float>()
+        {
+            0,
+            0,
+            0,
+            0,
+            0,
+            Values[2]
+        };
+        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, multiplyValues, Values[3]));
     }
     
     public override void Initialize()
@@ -95,7 +120,7 @@ public class OverDriveSkill : InstantSkill
         };
         GetEffect(1).Initialize(Cost);                       // ConsumeManaEffect
         GetEffect(2).Initialize(Cooltime, SkillIndex);       // CooldownEffect
-        GetEffect(3).Initialize(GameManager.Instance.Player, multiplyValues, Values[1]);
+        GetEffect(3).Initialize(GameManager.Instance.Player.stat, multiplyValues, Values[1]);
 
         multiplyValues = new List<float>()
         {
@@ -106,22 +131,28 @@ public class OverDriveSkill : InstantSkill
             0,
             Values[2]
         };
-        GetEffect(4).Initialize(GameManager.Instance.Player, multiplyValues, Values[3]);
+        GetEffect(4).Initialize(GameManager.Instance.Player.stat, multiplyValues, Values[3]);
     }
 
     public override bool ApplySkill(Actor source)
     {
+        if (!isStart)
+        {
+            isStart = true;
+            Initialize();
+        }
         if (!base.ApplySkill(source))
             return false;
         
         if (_currentEffectIndex >= GetEffectCount())
         {
             _currentEffectIndex = 1; // 다시 초기화 가능하도록
+            isStart = false;
             return true;
         }
 
         var effect = GetEffect(_currentEffectIndex);
-        bool success = effect.Apply(source, source.target ?? null);
+        bool success = effect.Apply(source,null);
 
         if (success)
         {
