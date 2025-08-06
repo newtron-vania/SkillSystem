@@ -66,6 +66,7 @@ public class PlayerController : MonoBehaviour
         {
             var targetPosition = new Vector3(hit.point.x, actor.transform.position.y, hit.point.z);
             movement.targetPosition = targetPosition;
+            Debug.Log($"TargetPosition :  {targetPosition}");
         }
     }
 }

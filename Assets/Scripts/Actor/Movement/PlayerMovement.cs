@@ -4,6 +4,11 @@ public class PlayerMovement : Movement
 {
     public Vector3 targetPosition;  // 목표 위치 (타겟 위치)
 
+    protected void FixedUpdate()
+    {
+        base.FixedUpdate();
+    }
+
     protected override void Move()
     {
         // 목표 위치의 X, Y 값을 목표로 이동
