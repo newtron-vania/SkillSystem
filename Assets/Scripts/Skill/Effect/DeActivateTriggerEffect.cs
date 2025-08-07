@@ -24,6 +24,6 @@ public class DeActivateTriggerEffect : Effect
 
     public override void Clear()
     {
-        throw new NotImplementedException();
+        // No state to clear for this effect.
     }
 }
