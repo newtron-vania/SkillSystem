@@ -26,7 +26,7 @@ public class DamageEffect : Effect
 
     public override bool Apply(Actor source, Actor target)
     {
-        var finalDamage = _defaultDamage + _defaultDamage + source.stat.ap * _mulAp + source.stat.ad * _mulAd;
+        var finalDamage = _defaultDamage + source.stat.ap * _mulAp + source.stat.ad * _mulAd;
         target.stat.health -= finalDamage - target.stat.defense;
         return true;
     }
