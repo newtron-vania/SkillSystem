@@ -11,10 +11,6 @@ public class EnemyMovement : Movement
         direction = Vector3.forward; // 일직선으로 이동하도록 설정
     }
 
-    protected void FixedUpdate()
-    {
-        base.FixedUpdate();
-    }
 
     // 일직선으로 1씩 이동
     protected override void Move()

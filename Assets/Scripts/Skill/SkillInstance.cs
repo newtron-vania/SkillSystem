@@ -20,4 +20,9 @@ public class SkillInstance
     }
 
     public bool IsComplete => !Skill.IsRunning;
+
+    public void Clear()
+    {
+        Skill.Clear();
+    }
 }

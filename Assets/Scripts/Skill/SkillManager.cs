@@ -25,6 +25,7 @@ public class SkillManager : MonoBehaviour
         {
             if (activeSkills[i].IsComplete)
             {
+                activeSkills[i].Clear();
                 activeSkills.RemoveAt(i);
             }
         }

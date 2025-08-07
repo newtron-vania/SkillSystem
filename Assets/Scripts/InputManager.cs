@@ -32,7 +32,7 @@ public class InputManager : Singleton<InputManager>
         {
             if (Input.GetKeyDown(keyBinding.Key))
             {
-                keyBinding.Value.Invoke();  // 키가 눌리면 해당 동작을 실행
+                keyBinding.Value?.Invoke();  // 키가 눌리면 해당 동작을 실행
             }
         }
         // 마우스 버튼 클릭 체크 
@@ -40,7 +40,7 @@ public class InputManager : Singleton<InputManager>
         {
             if (Input.GetMouseButtonDown(mouseBinding.Key))
             {
-                mouseBinding.Value.Invoke();  // 마우스 클릭 이벤트 실행
+                mouseBinding.Value?.Invoke();  // 마우스 클릭 이벤트 실행
             }
         }
     }

@@ -16,7 +16,7 @@ public abstract class Skill
     public int Cooltime;
     public List<float> Values;
 
-    protected int _currentEffectIndex = 1; // 0은 RangeViewEffect, 1부터 실행
+    protected int _currentEffectIndex = 0;
     public bool IsRunning { get; protected set; } = true;
 
     public Skill(SkillData skillData)
@@ -66,6 +66,11 @@ public abstract class Skill
     ///     스킬을 실행합니다. (하위 클래스에서 구현)
     /// </summary>
     public abstract bool ApplySkill(Actor source);
+
+    public virtual void Clear()
+    {
+        IsRunning = true;
+    }
 }
 
 
@@ -77,6 +82,7 @@ public abstract class Skill
 public class NoneTargetSkill : Skill
 {
     private bool _isViewActive;
+    private bool _isSkillActive;
     private Action action;
     protected Vector3 targetPosition;
 
@@ -87,9 +93,6 @@ public class NoneTargetSkill : Skill
 
     public override bool ApplySkill(Actor source)
     {
-        // 실행 중인지 여부 갱신
-        IsRunning = _currentEffectIndex < GetEffectCount();
-
         // 이미 다른 스킬이 발동 중이라면 중단
         if (TriggerManager.Instance.IsTriggerActive(GameTrigger.SkillActivated)) return true;
 
@@ -101,6 +104,7 @@ public class NoneTargetSkill : Skill
 
             source.SkillManager.RegisterSkill(this, source);
             action = () => ClickSkillInput(source); // 클릭 이벤트 연결
+            TriggerManager.Instance.ActivateTrigger(GameTrigger.SkillActivated);
             InputManager.Instance.AddMouseBinding(0, action);
         }
 
@@ -127,8 +131,8 @@ public class NoneTargetSkill : Skill
 
         GetEffect(0).Clear(); // 사거리 이펙트 제거
         _isViewActive = false;
+        _currentEffectIndex = 1;
         InputManager.Instance.RemoveMouseBinding(0, action);
-        TriggerManager.Instance.ActivateTrigger(GameTrigger.SkillActivated); // 스킬 시작 트리거
         Debug.Log($"{source.championName} 사용: {SkillName}");
     }
 }
@@ -139,17 +143,19 @@ public class NoneTargetSkill : Skill
 /// </summary>
 public class InstantSkill : Skill
 {
-    private bool isRegistared = false;
+    protected bool isRegistared = false;
     public InstantSkill(SkillData skillData) : base(skillData)
     {
     }
 
     public override bool ApplySkill(Actor source)
     {
-        IsRunning = _currentEffectIndex < GetEffectCount();
-        Debug.Log($"{source.championName} 사용: {SkillName}");
-
-        if(!isRegistared) source.SkillManager.RegisterSkill(this, source); // 스킬 실행 등록
+        if(!isRegistared) 
+        {
+            isRegistared = true;
+            source.SkillManager.RegisterSkill(this, source); // 스킬 실행 등록
+            Debug.Log($"{source.championName} 사용: {SkillName}");
+        }
         
         return true; // 외부에서 이펙트 실행을 이어서 처리
     }
@@ -172,8 +178,6 @@ public class TargetSkill : Skill
 
     public override bool ApplySkill(Actor source)
     {
-        IsRunning = _currentEffectIndex < GetEffectCount();
-
         if (TriggerManager.Instance.IsTriggerActive(GameTrigger.SkillActivated)) return true;
 
         if (!_isViewActive)
@@ -209,6 +213,7 @@ public class TargetSkill : Skill
 
             GetEffect(0).Clear(); // 사거리 이펙트 제거
             _isViewActive = false;
+            _currentEffectIndex = 1;
             InputManager.Instance.RemoveMouseBinding(0, action);
             TriggerManager.Instance.ActivateTrigger(GameTrigger.SkillActivated); // 스킬 실행
             Debug.Log($"{source.championName} 사용: {SkillName}");

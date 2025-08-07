@@ -17,7 +17,7 @@ public class MultiplyStatEffect : Effect
 
     public MultiplyStatEffect(Stat originalStat, List<float> multiplyValues, float duration)
     {
-        _originalStat = originalStat;
+        _originalStat = originalStat.DeepCopy();
         _multiplyValues = multiplyValues;
         _duration = duration;
     }
@@ -37,13 +37,15 @@ public class MultiplyStatEffect : Effect
             source.stat.ApplyStatModification(_multiplyValues);
             isActive = true;
         }
-        
+
         if (_duration <= 0)
         {
             source.stat = _originalStat;
             Clear();
             return true;
         }
+        
+        _duration -= Time.deltaTime;
 
         return false;
     }

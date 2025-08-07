@@ -15,6 +15,7 @@ public class RocketGrabSkill : NoneTargetSkill
     {
         AddEffect(new ConsumeManaEffect(Cost));
         AddEffect(new CooldownEffect(Cooltime, SkillIndex));
+        AddEffect(new ActivateTriggerEffect(new List<GameTrigger> { GameTrigger.SkillActivated }));
         AddEffect(new ShootProjectileEffect(Values[3], "Projectile/DefaultProjectile", Values[2], (source, target) =>
         {
             var damageEffect = new DamageEffect(Values[0], Values[1], 0);
@@ -24,6 +25,7 @@ public class RocketGrabSkill : NoneTargetSkill
             source.target = target;
         }));
         AddEffect(new WaitForCheckEffect(isCatch));
+        AddEffect(new DeActivateTriggerEffect(new List<GameTrigger> { GameTrigger.SkillActivated }));
         AddEffect(new GrabEffect());
     }
 
@@ -32,10 +34,7 @@ public class RocketGrabSkill : NoneTargetSkill
         isCatch._ischeck = false;
         GetEffect(1).Initialize(Cost); // ConsumeManaEffect
         GetEffect(2).Initialize(Cooltime, SkillIndex); // CooldownEffect
-        GetEffect(3).Initialize(
-            Values[3], // projectile speed
-            "Projectile/DefaultProjectile", // prefab path
-            Values[2], // range
+        GetEffect(3).Initialize(Values[3], "Projectile/DefaultProjectile", Values[2],
             (Action<Actor, Actor>)((source, target) =>
             {
                 var damageEffect = new DamageEffect(Values[0], Values[1], 0);
@@ -55,9 +54,7 @@ public class RocketGrabSkill : NoneTargetSkill
 
         if (_currentEffectIndex >= GetEffectCount())
         {
-            TriggerManager.Instance.DeactivateTrigger(GameTrigger.SkillActivated);
-            _currentEffectIndex = 1; // 다시 초기화 가능하도록
-            isCatch._ischeck = false;
+            IsRunning = false;
             return true;
         }
 
@@ -72,6 +69,13 @@ public class RocketGrabSkill : NoneTargetSkill
 
         return false; // 아직 스킬 진행 중
     }
+
+    public override void Clear()
+    {
+        base.Clear();
+        _currentEffectIndex = 1; // 다시 초기화 가능하도록
+        isCatch._ischeck = false;
+    }
 }
 
 /// <summary>
@@ -82,82 +86,44 @@ public class RocketGrabSkill : NoneTargetSkill
 /// </summary>
 public class OverDriveSkill : InstantSkill
 {
-    private bool isStart;
-
+    private bool _isStart;
+    private readonly List<float> _multiplyValues1 = new() { 1, 1, 1, 1, 1, 1 };
+    private readonly List<float> _multiplyValues2 = new() { 1, 1, 1, 1, 1, 1 };
     public OverDriveSkill(SkillData skillData) : base(skillData)
     {
         AddEffect(new WaitForTimeEffect(0.15f));
         AddEffect(new ConsumeManaEffect(Cost));
         AddEffect(new CooldownEffect(Cooltime, SkillIndex));
-
-        var multiplyValues = new List<float>
-        {
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            Values[0]
-        };
-
-        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, multiplyValues, Values[1]));
-
-        multiplyValues = new List<float>
-        {
-            0,
-            0,
-            0,
-            0,
-            0,
-            Values[2]
-        };
-        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, multiplyValues, Values[3]));
+        _multiplyValues1[5] = Values[0];
+        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, _multiplyValues1, Values[1]));
+        _multiplyValues2[5] = Values[2];
+        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, _multiplyValues2, Values[3]));
     }
 
     public override void Initialize()
     {
-        var multiplyValues = new List<float>
-        {
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            Values[0]
-        };
         GetEffect(1).Initialize(Cost); // ConsumeManaEffect
         GetEffect(2).Initialize(Cooltime, SkillIndex); // CooldownEffect
-        GetEffect(3).Initialize(GameManager.Instance.Player.stat, multiplyValues, Values[1]);
-
-        multiplyValues = new List<float>
-        {
-            0,
-            0,
-            0,
-            0,
-            0,
-            Values[2]
-        };
-        GetEffect(4).Initialize(GameManager.Instance.Player.stat, multiplyValues, Values[3]);
+        _multiplyValues1[5] = Values[0];
+        GetEffect(3).Initialize(GameManager.Instance.Player.stat, _multiplyValues1, Values[1]);
+        _multiplyValues2[5] = Values[2];
+        GetEffect(4).Initialize(GameManager.Instance.Player.stat, _multiplyValues2, Values[3]);
     }
 
     public override bool ApplySkill(Actor source)
     {
-        if (!isStart)
-        {
-            isStart = true;
-            Initialize();
-        }
-
         if (!base.ApplySkill(source))
             return false;
 
+        if (!_isStart)
+        {
+            _isStart = true;
+            Initialize();
+        }
+        
         if (_currentEffectIndex >= GetEffectCount())
         {
-            _currentEffectIndex = 1; // 다시 초기화 가능하도록
-            isStart = false;
+            IsRunning = false;
             return true;
         }
 
@@ -171,6 +137,14 @@ public class OverDriveSkill : InstantSkill
         }
 
         return false;
+    }
+
+    public override void Clear()
+    {
+        base.Clear();
+        _currentEffectIndex = 0; // 다시 초기화 가능하도록
+        _isStart = false;
+        isRegistared = false;
     }
 }
 
@@ -187,12 +161,31 @@ public class PowerFistSkill : TargetSkill
 
     public override bool ApplySkill(Actor source)
     {
-        var result = base.ApplySkill(source);
-        if (result)
+        if (!base.ApplySkill(source))
+            return false;
+
+        if (_currentEffectIndex >= GetEffectCount())
         {
+            IsRunning = false;
+            return true;
         }
 
-        TriggerManager.Instance.DeactivateTrigger(GameTrigger.SkillActivated);
+        var effect = GetEffect(_currentEffectIndex);
+        var success = effect.Apply(source, null);
+
+        if (success)
+        {
+            Debug.Log($"{_currentEffectIndex}th Effect successfully applied");
+            _currentEffectIndex++; // 다음 Effect로
+        }
+        
         return false;
+    }
+
+
+    public override void Clear()
+    {
+        base.Clear();
+        TriggerManager.Instance.DeactivateTrigger(GameTrigger.SkillActivated);
     }
 }

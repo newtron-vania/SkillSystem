@@ -3,11 +3,7 @@ using UnityEngine;
 public class PlayerMovement : Movement
 {
     public Vector3 targetPosition;  // 목표 위치 (타겟 위치)
-
-    protected void FixedUpdate()
-    {
-        base.FixedUpdate();
-    }
+    
 
     protected override void Move()
     {
