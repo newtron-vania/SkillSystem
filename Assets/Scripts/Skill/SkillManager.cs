@@ -42,7 +42,10 @@ public class SkillManager : MonoBehaviour
         actorSkills[actor].Add(skill);
         activeSkills.Add(new SkillInstance(skill, actor)); // 스킬 인스턴스 생성 및 활성화
 
-        TriggerManager.Instance.IsTriggerActive(GameTrigger.SkillActivated); // 트리거 상태 확인용 호출
+        if (TriggerManager.Instance.IsTriggerActive(GameTrigger.SkillActivated)) // 트리거 상태 확인용 호출
+        {
+            Debug.Log("SkillActivated trigger is active for " + actor.name);
+        }
     }
 
     /// <summary>
