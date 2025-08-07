@@ -144,7 +144,7 @@ public class OverDriveSkill : InstantSkill
         base.Clear();
         _currentEffectIndex = 0; // 다시 초기화 가능하도록
         _isStart = false;
-        isRegistared = false;
+        isRegistered = false;
     }
 }
 
