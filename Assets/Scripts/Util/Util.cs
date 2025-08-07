@@ -2,6 +2,7 @@ using UnityEngine;
 
 public static class Util
 {
+    // Util: 마우스 위치를 기반으로 지면(Ground)의 월드 좌표를 반환합니다.
     public static Vector3 GetMouseGroundPosition()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);

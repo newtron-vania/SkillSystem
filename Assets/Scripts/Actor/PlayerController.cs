@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Actor actor;
-    [SerializeField] private PlayerMovement movement;
+    [SerializeField] private Movement movement;
     [SerializeField] private SkillManager skillManager;
     [SerializeField] private SkillDataLoader skillDataLoader;
 
@@ -65,7 +65,11 @@ public class PlayerController : MonoBehaviour
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, groundLayer)) // "Ground" 레이어에 대해서만 충돌
         {
             var targetPosition = new Vector3(hit.point.x, actor.transform.position.y, hit.point.z);
-            movement.targetPosition = targetPosition;
+            if (movement is PlayerMovement playerMovement)
+            {
+                playerMovement.targetPosition = targetPosition;
+                Debug.Log($"TargetPosition :  {targetPosition}");
+            }
         }
     }
 }

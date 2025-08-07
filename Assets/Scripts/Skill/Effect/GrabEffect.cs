@@ -1,6 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// GrabEffect는 대상 Actor를 시전자(source) 방향으로 일정 속도로 끌어당기는 효과를 수행하는 클래스입니다.
+/// 일정 거리 이내에 도달하면 이동을 멈추며, 잘못된 이동 조건이 감지되면 강제로 위치를 조정해 종료합니다.
+/// </summary>
 public class GrabEffect : Effect
 {
     private float _moveSpeed; // 이동 속도

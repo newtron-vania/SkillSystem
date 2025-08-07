@@ -3,12 +3,7 @@ using UnityEngine;
 public class PlayerMovement : Movement
 {
     public Vector3 targetPosition;  // 목표 위치 (타겟 위치)
-
-    private void Update()
-    {
-        // 타겟 위치로 이동 (X, Y 축만 고려)
-        Move();
-    }
+    
 
     protected override void Move()
     {
