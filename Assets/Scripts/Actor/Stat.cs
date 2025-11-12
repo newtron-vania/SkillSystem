@@ -4,12 +4,24 @@ using Unity.VisualScripting;
 [System.Serializable]
 public class Stat
 {
+    // Stat properties with alternative names for compatibility
     public float health;
+    public float hp { get => health; set => health = value; }
+
     public float ad;
+    public float attackDamage { get => ad; set => ad = value; }
+
     public float ap;
+    public float magicPower { get => ap; set => ap = value; }
+
     public float defense;
+    public float armor { get => defense; set => defense = value; }
+    public float magicResistance { get => defense; set => defense = value; }
+
     public float mana;
+
     public float movespeed;
+    public float attackSpeed { get; set; } = 1.0f;
 
     public Stat(float health, float ad, float ap, float defense, float mana, float movespeed)
     {

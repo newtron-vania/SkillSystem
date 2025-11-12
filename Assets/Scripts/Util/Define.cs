@@ -16,4 +16,16 @@ public class Define
         Blitzcrank,
         Sona
     }
+
+// GameTrigger: 게임 내 트리거 이벤트 타입
+    public enum GameTrigger
+    {
+        None,
+        SkillActivated,
+        SkillCompleted,
+        DamageDealt,
+        TargetAcquired,
+        ProjectileHit,
+        EffectApplied
+    }
 }

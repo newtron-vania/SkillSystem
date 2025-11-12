@@ -27,7 +27,6 @@ public class Projectile : MonoBehaviour
             ResourceManager.Instance.Destroy(gameObject); // 사거리 초과 시 제거
         }
     }
-
     
     /// <summary>
     /// 충돌 감지: 적에게 맞았을 경우 액션 실행 후 투사체 파괴
@@ -44,7 +43,7 @@ public class Projectile : MonoBehaviour
             ResourceManager.Instance.Destroy(gameObject);     // 투사체 제거
         }
     }
-
+    
     /// <summary>
     /// 투사체를 지정된 방향, 속도, 사거리로 발사합니다.
     /// </summary>

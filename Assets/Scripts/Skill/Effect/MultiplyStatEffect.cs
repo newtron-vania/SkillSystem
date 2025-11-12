@@ -8,32 +8,61 @@ using UnityEngine;
 /// </summary>
 public class MultiplyStatEffect : Effect
 {
-    private Stat _originalStat;// 상태 효과가 끝난 후 되돌릴 수 있도록
-    private List<float> _multiplyValues;  // 각 스탯에 대해 적용할 배수 리스트
+    private Stat _originalStat;
+    private List<float> _multiplyValues;
     private float _duration;
-
     private bool isActive = false;
-    // 상태 변경을 적용하는 메서드
 
-    public MultiplyStatEffect(Stat originalStat, List<float> multiplyValues, float duration)
+    public MultiplyStatEffect(Stat originalStat = null, List<float> multiplyValues = null, float duration = 0f)
     {
-        _originalStat = originalStat.DeepCopy();
+        _originalStat = originalStat?.DeepCopy();
         _multiplyValues = multiplyValues;
         _duration = duration;
+        IsInitialized = originalStat != null && multiplyValues != null && duration > 0;
     }
 
-    public override void Initialize(params object[] objects)
+    public override SkillResult Initialize(params object[] objects)
     {
-        if(objects[0] is Stat stat) _originalStat = stat.DeepCopy();
-        if(objects[1] is List<float> values) _multiplyValues = values;
-        if(objects[2] is float duration) _duration = duration;
+        try
+        {
+            if (objects.Length < 3)
+                return Failure("MultiplyStatEffect.Initialize: Expected 3 parameters (Stat, List<float>, float)");
+
+            if (objects[0] is Stat stat && 
+                objects[1] is List<float> values && 
+                objects[2] is float duration)
+            {
+                _originalStat = stat.DeepCopy();
+                _multiplyValues = values;
+                _duration = duration;
+                IsInitialized = true;
+                return Success($"MultiplyStatEffect initialized with duration: {_duration}");
+            }
+
+            return Failure($"MultiplyStatEffect.Initialize: Invalid parameter types");
+        }
+        catch (Exception ex)
+        {
+            return Failure("MultiplyStatEffect.Initialize failed", ex);
+        }
     }
 
     public override bool Apply(Actor source, Actor target)
     {
+        if (!IsInitialized)
+        {
+            Debug.LogError("MultiplyStatEffect: Not initialized before Apply");
+            return false;
+        }
+
+        if (source?.stat == null)
+        {
+            Debug.LogError("MultiplyStatEffect: Source or source.stat is null");
+            return false;
+        }
+
         if (!isActive)
         {
-            // 타겟 스탯에 영향을 미치는 효과 적용
             source.stat.ApplyStatModification(_multiplyValues);
             isActive = true;
         }
@@ -46,7 +75,6 @@ public class MultiplyStatEffect : Effect
         }
         
         _duration -= Time.deltaTime;
-
         return false;
     }
 
@@ -54,5 +82,4 @@ public class MultiplyStatEffect : Effect
     {
         isActive = false;
     }
-
 }

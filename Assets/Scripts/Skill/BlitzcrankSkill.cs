@@ -11,70 +11,199 @@ public class RocketGrabSkill : NoneTargetSkill
 {
     private readonly ToBoolCheck isCatch = new();
 
-    public RocketGrabSkill(SkillData skillData) : base(skillData)
+    public RocketGrabSkill(SkillData skillData,
+                          IInputService inputService = null,
+                          ITriggerService triggerService = null,
+                          ITargetingService targetingService = null,
+                          ISkillManagerService skillManagerService = null) 
+        : base(skillData, inputService, triggerService, targetingService, skillManagerService)
     {
-        AddEffect(new ConsumeManaEffect(Cost));
-        AddEffect(new CooldownEffect(Cooltime, SkillIndex));
-        AddEffect(new ActivateTriggerEffect(new List<GameTrigger> { GameTrigger.SkillActivated }));
-        AddEffect(new ShootProjectileEffect(Values[3], "Projectile/DefaultProjectile", Values[2], (source, target) =>
-        {
-            var damageEffect = new DamageEffect(Values[0], Values[1], 0);
-            damageEffect.Apply(source, target); // 즉시 데미지 적용
-            GetEffect(5).Initialize(Values[3] * 2);
-            isCatch._ischeck = true;
-            source.target = target;
-        }));
-        AddEffect(new WaitForCheckEffect(isCatch));
-        AddEffect(new DeActivateTriggerEffect(new List<GameTrigger> { GameTrigger.SkillActivated }));
+        InitializeEffects();
+    }
+
+    private void InitializeEffects()
+    {
+        // Effect들을 기본 생성자로 생성하고 나중에 Initialize로 설정
+        AddEffect(new ConsumeManaEffect());
+        AddEffect(new CooldownEffect());
+        AddEffect(new ActivateTriggerEffect());
+        AddEffect(new ShootProjectileEffect());
+        AddEffect(new WaitForCheckEffect());
+        AddEffect(new DeActivateTriggerEffect());
         AddEffect(new GrabEffect());
     }
 
-    public override void Initialize()
+    public override SkillResult Initialize()
     {
-        isCatch._ischeck = false;
-        GetEffect(1).Initialize(Cost); // ConsumeManaEffect
-        GetEffect(2).Initialize(Cooltime, SkillIndex); // CooldownEffect
-        GetEffect(3).Initialize(Values[3], "Projectile/DefaultProjectile", Values[2],
-            (Action<Actor, Actor>)((source, target) =>
+        try
+        {
+            isCatch._ischeck = false;
+            
+            var results = new List<SkillResult>();
+
+            // Effect 0: ConsumeManaEffect
+            var effect0Result = GetEffect(0);
+            if (effect0Result.IsSuccess)
             {
-                var damageEffect = new DamageEffect(Values[0], Values[1], 0);
-                damageEffect.Apply(source, target); // 즉시 데미지 적용
-                GetEffect(5).Initialize(Values[3] * 2);
-                isCatch._ischeck = true;
-                source.target = target;
-            })
-        ); // ShootProjectileEffect
-        GetEffect(4).Initialize(isCatch); // WaitForTimeEffect
+                var initResult = effect0Result.Value.Initialize(Cost);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ConsumeManaEffect: {effect0Result.Message}");
+            }
+
+            // Effect 1: CooldownEffect
+            var effect1Result = GetEffect(1);
+            if (effect1Result.IsSuccess)
+            {
+                var initResult = effect1Result.Value.Initialize(Cooltime, SkillIndex);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get CooldownEffect: {effect1Result.Message}");
+            }
+
+            // Effect 2: ActivateTriggerEffect
+            var effect2Result = GetEffect(2);
+            if (effect2Result.IsSuccess)
+            {
+                var triggers = new List<GameTrigger> { GameTrigger.SkillActivated };
+                var initResult = effect2Result.Value.Initialize(triggers);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ActivateTriggerEffect: {effect2Result.Message}");
+            }
+
+            // Effect 3: ShootProjectileEffect
+            var effect3Result = GetEffect(3);
+            if (effect3Result.IsSuccess)
+            {
+                Action<Actor, Actor> projectileAction = (source, target) =>
+                {
+                    var damageEffect = new DamageEffect(Values[0], Values[1], 0);
+                    damageEffect.Apply(source, target);
+                    
+                    var grabEffectResult = GetEffect(6);
+                    if (grabEffectResult.IsSuccess)
+                    {
+                        grabEffectResult.Value.Initialize(Values[3] * 2);
+                    }
+                    
+                    isCatch._ischeck = true;
+                    source.target = target;
+                };
+                
+                var initResult = effect3Result.Value.Initialize(Values[3], "Projectile/DefaultProjectile", Values[2], projectileAction);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ShootProjectileEffect: {effect3Result.Message}");
+            }
+
+            // Effect 4: WaitForCheckEffect
+            var effect4Result = GetEffect(4);
+            if (effect4Result.IsSuccess)
+            {
+                var initResult = effect4Result.Value.Initialize(isCatch);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get WaitForCheckEffect: {effect4Result.Message}");
+            }
+
+            // Effect 5: DeActivateTriggerEffect
+            var effect5Result = GetEffect(5);
+            if (effect5Result.IsSuccess)
+            {
+                var triggers = new List<GameTrigger> { GameTrigger.SkillActivated };
+                var initResult = effect5Result.Value.Initialize(triggers);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get DeActivateTriggerEffect: {effect5Result.Message}");
+            }
+
+            // Effect 6: GrabEffect (기본값 사용)
+            var effect6Result = GetEffect(6);
+            if (effect6Result.IsSuccess)
+            {
+                var initResult = effect6Result.Value.Initialize();
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get GrabEffect: {effect6Result.Message}");
+            }
+
+            // 모든 초기화 결과 확인
+            var failedResults = results.Where(r => !r.IsSuccess).ToList();
+            if (failedResults.Any())
+            {
+                var errorMessages = string.Join(", ", failedResults.Select(r => r.Message));
+                return SkillResult.Failure($"Effect initialization failed: {errorMessages}");
+            }
+
+            return base.Initialize();
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("RocketGrabSkill initialization failed", ex);
+        }
     }
 
-    public override bool ApplySkill(Actor source)
+    public override SkillResult ApplySkill(Actor source)
     {
-        if (!base.ApplySkill(source))
-            return false;
+        var baseResult = base.ApplySkill(source);
+        if (!baseResult.IsSuccess)
+            return baseResult;
 
         if (_currentEffectIndex >= GetEffectCount())
         {
             IsRunning = false;
-            return true;
+            return SkillResult.Success("RocketGrabSkill completed successfully");
         }
 
-        var effect = GetEffect(_currentEffectIndex);
-        var success = effect.Apply(source, source.target ?? null);
+        var effectResult = GetEffect(_currentEffectIndex);
+        if (!effectResult.IsSuccess)
+        {
+            return SkillResult.Failure($"Failed to get effect at index {_currentEffectIndex}: {effectResult.Message}");
+        }
+
+        var success = effectResult.Value.Apply(source, source.target ?? null);
 
         if (success)
         {
             Debug.Log($"{_currentEffectIndex}th Effect successfully applied");
-            _currentEffectIndex++; // 다음 Effect로
+            _currentEffectIndex++;
         }
 
-        return false; // 아직 스킬 진행 중
+        return SkillResult.Success("Effect applied, continuing skill execution");
     }
 
-    public override void Clear()
+    public override SkillResult Clear()
     {
-        base.Clear();
-        _currentEffectIndex = 1; // 다시 초기화 가능하도록
-        isCatch._ischeck = false;
+        try
+        {
+            var baseResult = base.Clear();
+            if (!baseResult.IsSuccess)
+                return baseResult;
+            
+            _currentEffectIndex = 1;
+            isCatch._ischeck = false;
+            
+            return SkillResult.Success("RocketGrabSkill cleared successfully");
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("RocketGrabSkill clear failed", ex);
+        }
     }
 }
 
@@ -89,62 +218,164 @@ public class OverDriveSkill : InstantSkill
     private bool _isStart;
     private readonly List<float> _multiplyValues1 = new() { 1, 1, 1, 1, 1, 1 };
     private readonly List<float> _multiplyValues2 = new() { 1, 1, 1, 1, 1, 1 };
-    public OverDriveSkill(SkillData skillData) : base(skillData)
+
+    public OverDriveSkill(SkillData skillData,
+                         IInputService inputService = null,
+                         ITriggerService triggerService = null,
+                         ITargetingService targetingService = null,
+                         ISkillManagerService skillManagerService = null) 
+        : base(skillData, inputService, triggerService, targetingService, skillManagerService)
     {
-        AddEffect(new WaitForTimeEffect(0.15f));
-        AddEffect(new ConsumeManaEffect(Cost));
-        AddEffect(new CooldownEffect(Cooltime, SkillIndex));
-        _multiplyValues1[5] = Values[0];
-        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, _multiplyValues1, Values[1]));
-        _multiplyValues2[5] = Values[2];
-        AddEffect(new MultiplyStatEffect(GameManager.Instance.Player.stat, _multiplyValues2, Values[3]));
+        InitializeEffects();
     }
 
-    public override void Initialize()
+    private void InitializeEffects()
     {
-        GetEffect(1).Initialize(Cost); // ConsumeManaEffect
-        GetEffect(2).Initialize(Cooltime, SkillIndex); // CooldownEffect
-        _multiplyValues1[5] = Values[0];
-        GetEffect(3).Initialize(GameManager.Instance.Player.stat, _multiplyValues1, Values[1]);
-        _multiplyValues2[5] = Values[2];
-        GetEffect(4).Initialize(GameManager.Instance.Player.stat, _multiplyValues2, Values[3]);
+        AddEffect(new WaitForTimeEffect());
+        AddEffect(new ConsumeManaEffect());
+        AddEffect(new CooldownEffect());
+        AddEffect(new MultiplyStatEffect());
+        AddEffect(new MultiplyStatEffect());
     }
 
-    public override bool ApplySkill(Actor source)
+    public override SkillResult Initialize()
     {
-        if (!base.ApplySkill(source))
-            return false;
+        try
+        {
+            var results = new List<SkillResult>();
+
+            // Effect 0: WaitForTimeEffect
+            var effect0Result = GetEffect(0);
+            if (effect0Result.IsSuccess)
+            {
+                var initResult = effect0Result.Value.Initialize(0.15f);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get WaitForTimeEffect: {effect0Result.Message}");
+            }
+
+            // Effect 1: ConsumeManaEffect
+            var effect1Result = GetEffect(1);
+            if (effect1Result.IsSuccess)
+            {
+                var initResult = effect1Result.Value.Initialize(Cost);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ConsumeManaEffect: {effect1Result.Message}");
+            }
+
+            // Effect 2: CooldownEffect
+            var effect2Result = GetEffect(2);
+            if (effect2Result.IsSuccess)
+            {
+                var initResult = effect2Result.Value.Initialize(Cooltime, SkillIndex);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get CooldownEffect: {effect2Result.Message}");
+            }
+
+            // Effect 3: MultiplyStatEffect (첫 번째)
+            var effect3Result = GetEffect(3);
+            if (effect3Result.IsSuccess)
+            {
+                _multiplyValues1[5] = Values[0];
+                var initResult = effect3Result.Value.Initialize(GameManager.Instance.Player.stat, _multiplyValues1, Values[1]);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get first MultiplyStatEffect: {effect3Result.Message}");
+            }
+
+            // Effect 4: MultiplyStatEffect (두 번째)
+            var effect4Result = GetEffect(4);
+            if (effect4Result.IsSuccess)
+            {
+                _multiplyValues2[4] = Values[2]; // 이동속도는 인덱스 4
+                var initResult = effect4Result.Value.Initialize(GameManager.Instance.Player.stat, _multiplyValues2, Values[3]);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get second MultiplyStatEffect: {effect4Result.Message}");
+            }
+
+            // 모든 초기화 결과 확인
+            var failedResults = results.Where(r => !r.IsSuccess).ToList();
+            if (failedResults.Any())
+            {
+                var errorMessages = string.Join(", ", failedResults.Select(r => r.Message));
+                return SkillResult.Failure($"Effect initialization failed: {errorMessages}");
+            }
+
+            return base.Initialize();
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("OverDriveSkill initialization failed", ex);
+        }
+    }
+
+    public override SkillResult ApplySkill(Actor source)
+    {
+        var baseResult = base.ApplySkill(source);
+        if (!baseResult.IsSuccess)
+            return baseResult;
 
         if (!_isStart)
         {
             _isStart = true;
-            Initialize();
+            var initResult = Initialize();
+            if (!initResult.IsSuccess)
+                return initResult;
         }
-        
+
         if (_currentEffectIndex >= GetEffectCount())
         {
             IsRunning = false;
-            return true;
+            return SkillResult.Success("OverDriveSkill completed successfully");
         }
 
-        var effect = GetEffect(_currentEffectIndex);
-        var success = effect.Apply(source, null);
+        var effectResult = GetEffect(_currentEffectIndex);
+        if (!effectResult.IsSuccess)
+        {
+            return SkillResult.Failure($"Failed to get effect at index {_currentEffectIndex}: {effectResult.Message}");
+        }
+
+        var success = effectResult.Value.Apply(source, null);
 
         if (success)
         {
             Debug.Log($"{_currentEffectIndex}th Effect successfully applied");
-            _currentEffectIndex++; // 다음 Effect로
+            _currentEffectIndex++;
         }
 
-        return false;
+        return SkillResult.Success("Effect applied, continuing skill execution");
     }
 
-    public override void Clear()
+    public override SkillResult Clear()
     {
-        base.Clear();
-        _currentEffectIndex = 0; // 다시 초기화 가능하도록
-        _isStart = false;
-        isRegistared = false;
+        try
+        {
+            var baseResult = base.Clear();
+            if (!baseResult.IsSuccess)
+                return baseResult;
+
+            _currentEffectIndex = 0;
+            _isStart = false;
+            
+            return SkillResult.Success("OverDriveSkill cleared successfully");
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("OverDriveSkill clear failed", ex);
+        }
     }
 }
 
@@ -155,37 +386,143 @@ public class OverDriveSkill : InstantSkill
 /// </summary>
 public class PowerFistSkill : TargetSkill
 {
-    public PowerFistSkill(SkillData skillData) : base(skillData)
+    public PowerFistSkill(SkillData skillData,
+                         IInputService inputService = null,
+                         ITriggerService triggerService = null,
+                         ITargetingService targetingService = null,
+                         ISkillManagerService skillManagerService = null) 
+        : base(skillData, inputService, triggerService, targetingService, skillManagerService)
     {
+        InitializeEffects();
     }
 
-    public override bool ApplySkill(Actor source)
+    private void InitializeEffects()
     {
-        if (!base.ApplySkill(source))
-            return false;
+        // 기본적인 스킬 효과들 추가 (추후 확장 예정)
+        AddEffect(new ConsumeManaEffect());
+        AddEffect(new CooldownEffect());
+        AddEffect(new ActivateTriggerEffect());
+        // TODO: 추후 강화된 기본 공격이나 에어본 효과 추가
+        AddEffect(new DeActivateTriggerEffect());
+    }
+
+    public override SkillResult Initialize()
+    {
+        try
+        {
+            var results = new List<SkillResult>();
+
+            // Effect 0: ConsumeManaEffect
+            var effect0Result = GetEffect(0);
+            if (effect0Result.IsSuccess)
+            {
+                var initResult = effect0Result.Value.Initialize(Cost);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ConsumeManaEffect: {effect0Result.Message}");
+            }
+
+            // Effect 1: CooldownEffect
+            var effect1Result = GetEffect(1);
+            if (effect1Result.IsSuccess)
+            {
+                var initResult = effect1Result.Value.Initialize(Cooltime, SkillIndex);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get CooldownEffect: {effect1Result.Message}");
+            }
+
+            // Effect 2: ActivateTriggerEffect
+            var effect2Result = GetEffect(2);
+            if (effect2Result.IsSuccess)
+            {
+                var triggers = new List<GameTrigger> { GameTrigger.SkillActivated };
+                var initResult = effect2Result.Value.Initialize(triggers);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get ActivateTriggerEffect: {effect2Result.Message}");
+            }
+
+            // Effect 3: DeActivateTriggerEffect
+            var effect3Result = GetEffect(3);
+            if (effect3Result.IsSuccess)
+            {
+                var triggers = new List<GameTrigger> { GameTrigger.SkillActivated };
+                var initResult = effect3Result.Value.Initialize(triggers);
+                results.Add(initResult);
+            }
+            else
+            {
+                return SkillResult.Failure($"Failed to get DeActivateTriggerEffect: {effect3Result.Message}");
+            }
+
+            // 모든 초기화 결과 확인
+            var failedResults = results.Where(r => !r.IsSuccess).ToList();
+            if (failedResults.Any())
+            {
+                var errorMessages = string.Join(", ", failedResults.Select(r => r.Message));
+                return SkillResult.Failure($"Effect initialization failed: {errorMessages}");
+            }
+
+            return base.Initialize();
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("PowerFistSkill initialization failed", ex);
+        }
+    }
+
+    public override SkillResult ApplySkill(Actor source)
+    {
+        var baseResult = base.ApplySkill(source);
+        if (!baseResult.IsSuccess)
+            return baseResult;
 
         if (_currentEffectIndex >= GetEffectCount())
         {
             IsRunning = false;
-            return true;
+            return SkillResult.Success("PowerFistSkill completed successfully");
         }
 
-        var effect = GetEffect(_currentEffectIndex);
-        var success = effect.Apply(source, null);
+        var effectResult = GetEffect(_currentEffectIndex);
+        if (!effectResult.IsSuccess)
+        {
+            return SkillResult.Failure($"Failed to get effect at index {_currentEffectIndex}: {effectResult.Message}");
+        }
+
+        var success = effectResult.Value.Apply(source, source.target ?? null);
 
         if (success)
         {
             Debug.Log($"{_currentEffectIndex}th Effect successfully applied");
-            _currentEffectIndex++; // 다음 Effect로
+            _currentEffectIndex++;
         }
-        
-        return false;
+
+        return SkillResult.Success("Effect applied, continuing skill execution");
     }
 
-
-    public override void Clear()
+    public override SkillResult Clear()
     {
-        base.Clear();
-        TriggerManager.Instance.DeactivateTrigger(GameTrigger.SkillActivated);
+        try
+        {
+            var baseResult = base.Clear();
+            if (!baseResult.IsSuccess)
+                return baseResult;
+
+            // 스킬별 정리 작업
+            TriggerManager.Instance.DeactivateTrigger(GameTrigger.SkillActivated);
+            
+            return SkillResult.Success("PowerFistSkill cleared successfully");
+        }
+        catch (Exception ex)
+        {
+            return SkillResult.Failure("PowerFistSkill clear failed", ex);
+        }
     }
 }

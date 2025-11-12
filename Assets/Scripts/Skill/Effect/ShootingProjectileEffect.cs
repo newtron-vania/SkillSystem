@@ -8,46 +8,100 @@ using UnityEngine;
 /// </summary>
 public class ShootProjectileEffect : Effect
 {
-    private float _speed;                     // 투사체 속도
-    private string _projectilePath;           // 투사체 프리팹 리소스 경로
-    private float _maxDistance;               // 투사체 최대 이동 거리
-    Action<Actor, Actor> _projectileAction;   // 충돌 시 실행할 액션 (시전자, 피격자)
+    private float _speed;
+    private string _projectilePath;
+    private float _maxDistance;
+    private Action<Actor, Actor> _projectileAction;
 
-    public ShootProjectileEffect(float speed, string projectilePath, float maxDistance,
-        Action<Actor, Actor> projectileAction) : base()
+    public ShootProjectileEffect(float speed = 0f, string projectilePath = "", float maxDistance = 0f,
+        Action<Actor, Actor> projectileAction = null) : base()
     {
         _speed = speed;
         _projectilePath = projectilePath;
         _maxDistance = maxDistance;
         _projectileAction = projectileAction;
+        IsInitialized = speed > 0 && !string.IsNullOrEmpty(projectilePath) && maxDistance > 0;
     }
 
-    public override void Initialize(params object[] objects)
+    public override SkillResult Initialize(params object[] objects)
     {
-        if(objects[0] is float speed) _speed = speed;
-        if(objects[1] is string projectilePath) _projectilePath = projectilePath;
-        if(objects[2] is float maxDistance) _maxDistance = maxDistance;
-        if(objects[3] is Action<Actor, Actor> action1) _projectileAction = action1;
+        try
+        {
+            if (objects.Length < 4)
+                return Failure("ShootProjectileEffect.Initialize: Expected 4 parameters (float, string, float, Action<Actor, Actor>)");
+
+            if (objects[0] is float speed &&
+                objects[1] is string projectilePath &&
+                objects[2] is float maxDistance &&
+                objects[3] is Action<Actor, Actor> action)
+            {
+                _speed = speed;
+                _projectilePath = projectilePath;
+                _maxDistance = maxDistance;
+                _projectileAction = action;
+                IsInitialized = true;
+                return Success($"ShootProjectileEffect initialized with speed: {_speed}, path: {_projectilePath}");
+            }
+
+            return Failure("ShootProjectileEffect.Initialize: Invalid parameter types");
+        }
+        catch (Exception ex)
+        {
+            return Failure("ShootProjectileEffect.Initialize failed", ex);
+        }
     }
 
     public override bool Apply(Actor source, Actor target)
     {
-        Vector3 spawnPosition = source.transform.position + source.transform.forward * 1f + Vector3.up * 1.5f;
-        // 목표 지점으로 발사
-        GameObject projectile = ResourceManager.Instance.Instantiate(_projectilePath, spawnPosition, Quaternion.identity);
-        Vector3 direction = (source.targetPosition - source.transform.position).normalized;
-        Debug.Log($"TargetPosition: {source.targetPosition}");
-        Debug.Log($"Projectile Direction: {direction}");
-        Projectile projectilecomponent = projectile.GetComponent<Projectile>();
-        
-        projectilecomponent.AddEvent(_projectileAction);
-        projectilecomponent.Launch(direction, _speed, _maxDistance, source);
-        
-        return true;
+        if (!IsInitialized)
+        {
+            Debug.LogError("ShootProjectileEffect: Not initialized before Apply");
+            return false;
+        }
+
+        if (source == null)
+        {
+            Debug.LogError("ShootProjectileEffect: Source is null");
+            return false;
+        }
+
+        try
+        {
+            Vector3 spawnPosition = source.transform.position + source.transform.forward * 1f + Vector3.up * 1.5f;
+            GameObject projectile = ResourceManager.Instance.Instantiate(_projectilePath, spawnPosition, Quaternion.identity);
+            
+            if (projectile == null)
+            {
+                Debug.LogError($"ShootProjectileEffect: Failed to instantiate projectile at path: {_projectilePath}");
+                return false;
+            }
+
+            Vector3 direction = (source.targetPosition - source.transform.position).normalized;
+            Debug.Log($"TargetPosition: {source.targetPosition}");
+            Debug.Log($"Projectile Direction: {direction}");
+            
+            Projectile projectileComponent = projectile.GetComponent<Projectile>();
+            if (projectileComponent == null)
+            {
+                Debug.LogError("ShootProjectileEffect: Projectile component not found");
+                GameObject.Destroy(projectile);
+                return false;
+            }
+            
+            projectileComponent.AddEvent(_projectileAction);
+            projectileComponent.Launch(direction, _speed, _maxDistance, source);
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"ShootProjectileEffect.Apply failed: {ex.Message}");
+            return false;
+        }
     }
 
     public override void Clear()
     {
-        throw new NotImplementedException();
+        // 투사체는 자체적으로 생명주기를 관리하므로 Clear에서 특별한 작업 없음
     }
 }

@@ -3,38 +3,53 @@ using UnityEngine;
 
 public class WaitForTimeEffect : Effect
 {
-    private float _duration;      // 설정된 총 대기 시간
-    private float _remainingTime; // 남은 대기 시간
+    private float _duration;
+    private float _remainingTime;
 
-    public WaitForTimeEffect(float duration)
+    public WaitForTimeEffect(float duration = 0f)
     {
         _duration = duration;
         _remainingTime = duration;
+        IsInitialized = duration > 0;
     }
-    public override void Initialize(params object[] objects)
+
+    public override SkillResult Initialize(params object[] objects)
     {
-        if (objects[0] is float duration)
+        try
         {
-            _duration = duration;
-            _remainingTime = duration;
+            if (objects.Length == 0)
+                return Failure("WaitForTimeEffect.Initialize: No parameters provided");
+
+            if (objects[0] is float duration)
+            {
+                _duration = duration;
+                _remainingTime = duration;
+                IsInitialized = duration > 0;
+                return Success($"WaitForTimeEffect initialized with duration: {_duration}");
+            }
+
+            return Failure($"WaitForTimeEffect.Initialize: Expected float, got {objects[0]?.GetType()?.Name ?? "null"}");
         }
-        else
+        catch (Exception ex)
         {
-            Debug.LogError("WaitForTimeEffect.Initialize: 잘못된 초기화 값입니다.");
+            return Failure("WaitForTimeEffect.Initialize failed", ex);
         }
     }
 
     public override bool Apply(Actor source, Actor target)
     {
-        // 실행 중이라면 시간 감소
-        _remainingTime -= Time.deltaTime;
+        if (!IsInitialized)
+        {
+            Debug.LogError("WaitForTimeEffect: Not initialized before Apply");
+            return true; // End immediately if not initialized
+        }
 
-        // 시간이 다 되면 true 반환
+        _remainingTime -= Time.deltaTime;
         return _remainingTime <= 0f;
     }
 
     public override void Clear()
     {
-        _remainingTime = _duration; // 다음 사용을 위해 리셋 가능
+        _remainingTime = _duration; // 다음 사용을 위해 리셋
     }
 }

@@ -9,30 +9,55 @@ using UnityEngine;
 /// </summary>
 public class WaitForCheckEffect : Effect
 {
-    private ToBoolCheck _checker; // 대기 시간
+    private ToBoolCheck _checker;
 
-    public WaitForCheckEffect(ToBoolCheck checker) : base()
+    public WaitForCheckEffect(ToBoolCheck checker = null) : base()
     {
         _checker = checker;
+        IsInitialized = checker != null;
     }
 
-    // 대기 시간과 완료 후 실행할 액션을 설정하는 메서드
-    public override void Initialize(params object[] objects)
+    public override SkillResult Initialize(params object[] objects)
     {
-        if (objects[0] is ToBoolCheck checker)
+        try
         {
-            _checker = checker;  // 대기 시간
+            if (objects.Length == 0)
+                return Failure("WaitForCheckEffect.Initialize: No parameters provided");
+
+            if (objects[0] is ToBoolCheck checker)
+            {
+                _checker = checker;
+                IsInitialized = true;
+                return Success("WaitForCheckEffect initialized with checker");
+            }
+
+            return Failure($"WaitForCheckEffect.Initialize: Expected ToBoolCheck, got {objects[0]?.GetType()?.Name ?? "null"}");
+        }
+        catch (Exception ex)
+        {
+            return Failure("WaitForCheckEffect.Initialize failed", ex);
         }
     }
 
-    // 대기 후에 실행할 액션을 처리하는 코루틴
     public override bool Apply(Actor source, Actor target)
     {
+        if (!IsInitialized)
+        {
+            Debug.LogError("WaitForCheckEffect: Not initialized before Apply");
+            return false;
+        }
+
+        if (_checker == null)
+        {
+            Debug.LogError("WaitForCheckEffect: Checker is null");
+            return false;
+        }
+
         return _checker._ischeck;
     }
 
     public override void Clear()
     {
-        throw new NotImplementedException();
+        // WaitForCheckEffect는 상태를 변경하지 않으므로 Clear에서 특별한 작업 없음
     }
 }
